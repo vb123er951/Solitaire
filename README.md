@@ -60,4 +60,4 @@ The project follows a modular mixin-based architecture for better maintainabilit
 - `logger.py`: System-wide log redirection.
 
 ## License
-This project is for educational/personal use. Please refer to the `assets/cards/` directory for specific license terms regarding the image assets.
+This project is for educational/personal use.
