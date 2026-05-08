@@ -7,6 +7,11 @@ from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle, Line
 from storage import StorageManager
 
+from constants import (
+    THEME_GREEN, THEME_GREEN_DOWN, THEME_RED, THEME_RED_DOWN,
+    THEME_DEFAULT, THEME_DEFAULT_DOWN
+)
+
 class BaseUIMixin:
     """Base UI mixin for general helpers like styling, toasts, and localization."""
     
@@ -17,30 +22,17 @@ class BaseUIMixin:
         en_path = os.path.join(base_dir, "assets", "strings.json")
         
         defaults = {
-            "undo": "Undo",
-            "new_game": "New Game",
-            "stock_empty": "Empty",
-            "waste_label": "W",
-            "foundation_label": "F",
-            "tableau_label": "T",
-            "win_message": "YOU WIN!",
-            "play_again": "Play Again"
+            "undo": "Undo", "new_game": "New Game", "stock_empty": "Empty",
+            "waste_label": "W", "foundation_label": "F", "tableau_label": "T",
+            "win_message": "YOU WIN!", "play_again": "Play Again"
         }
 
         path = zh_path if os.path.exists(zh_path) else en_path
-        print(f"DEBUG: Attempting to load strings from: {path}")
-
         if os.path.exists(path):
             try:
-                with open(path, "r", encoding="utf-8") as f:
-                    self.strings = json.load(f)
-                print(f"DEBUG: Successfully loaded strings from {path}")
-            except Exception as e:
-                print(f"DEBUG: Error loading JSON: {e}")
-                self.strings = defaults
-        else:
-            print(f"DEBUG: Language file not found at {path}, using defaults")
-            self.strings = defaults
+                with open(path, "r", encoding="utf-8") as f: self.strings = json.load(f)
+            except Exception: self.strings = defaults
+        else: self.strings = defaults
 
     def show_toast(self, text):
         """Displays a temporary toast message at the bottom of the screen."""
@@ -48,72 +40,54 @@ class BaseUIMixin:
         radius = toast_h * 0.2
         
         toast = Label(
-            text=text,
-            size_hint=(None, None),
-            size=(Window.width * 0.8, toast_h),
+            text=text, size_hint=(None, None), size=(Window.width * 0.8, toast_h),
             pos=(Window.width * 0.1, Window.height * 0.12),
-            font_size=max(16, int(Window.width / 22)),
-            font_name=self.font_name,
-            color=(1, 1, 1, 1)
+            font_size=max(16, int(Window.width / 22)), font_name=self.font_name, color=(1, 1, 1, 1)
         )
         
         with toast.canvas.before:
-            # Background
             Color(0.1, 0.1, 0.1, 0.85)
             toast.bg_rect = RoundedRectangle(size=toast.size, pos=toast.pos, radius=[radius])
-            # Border
             Color(0.4, 0.4, 0.4, 0.5)
             toast.border_line = Line(rounded_rectangle=(toast.x, toast.y, toast.width, toast.height, radius), width=1.1)
         
         def update_toast_graphics(instance, value):
             if hasattr(instance, 'bg_rect'):
-                instance.bg_rect.pos = instance.pos
-                instance.bg_rect.size = instance.size
+                instance.bg_rect.pos, instance.bg_rect.size = instance.pos, instance.size
                 instance.border_line.rounded_rectangle = (instance.x, instance.y, instance.width, instance.height, radius)
         
         toast.bind(pos=update_toast_graphics, size=update_toast_graphics)
         self.add_widget(toast)
         
-        anim = Animation(opacity=1, duration=0.3) + \
-               Animation(opacity=1, duration=1.5) + \
-               Animation(opacity=0, duration=0.7)
+        anim = Animation(opacity=1, duration=0.3) + Animation(opacity=1, duration=1.5) + Animation(opacity=0, duration=0.7)
         anim.bind(on_complete=lambda *args: self.remove_widget(toast))
-        
         toast.opacity = 0
         anim.start(toast)
 
     def apply_ui_style(self, button, color_type="default"):
-        """Applies custom color styles with a 'clicked' feedback effect."""
-        button.background_normal = '' 
-        button.background_color = (0, 0, 0, 0)
-        button.color = (0, 0, 0, 1)
+        """Applies custom color styles based on theme constants."""
+        button.background_normal, button.background_color, button.color = '', (0, 0, 0, 0), (0, 0, 0, 1)
         
-        color_map = {
-            "green": ((0.6, 0.9, 0.6), (0.4, 0.7, 0.4)),
-            "red": ((0.9, 0.6, 0.6), (0.7, 0.4, 0.4)),
-            "secondary": ((0.8, 0.8, 0.8), (0.6, 0.6, 0.6)),
-            "default": ((0.5, 0.7, 0.9), (0.3, 0.5, 0.7))
+        style_map = {
+            "green": (THEME_GREEN, THEME_GREEN_DOWN, (0.3, 0.6, 0.3, 0.8)),
+            "red": (THEME_RED, THEME_RED_DOWN, (0.6, 0.3, 0.3, 0.8)),
+            "default": (THEME_DEFAULT, THEME_DEFAULT_DOWN, (0.2, 0.4, 0.6, 0.8))
         }
         
-        colors = color_map.get(color_type, color_map["default"])
-        border_color = (0.2, 0.4, 0.6, 0.8)
-        if color_type == "green": border_color = (0.3, 0.6, 0.3, 0.8)
-        if color_type == "red": border_color = (0.6, 0.3, 0.3, 0.8)
+        colors, down_colors, border = style_map.get(color_type, style_map["default"])
 
         with button.canvas.before:
-            button.bg_color_instr = Color(*colors[0], 1)
+            button.bg_color_instr = Color(*colors, 1)
             button.bg_rect = RoundedRectangle(size=button.size, pos=button.pos, radius=[5])
-            
         with button.canvas.after:
-            button.border_color_instr = Color(*border_color)
+            button.border_color_instr = Color(*border)
             button.border_line = Line(rounded_rectangle=(button.x, button.y, button.width, button.height, 5), width=1.1)
         
         def update_graphics(instance, value):
             if hasattr(instance, 'bg_rect'):
-                instance.bg_rect.pos = instance.pos
-                instance.bg_rect.size = instance.size
+                instance.bg_rect.pos, instance.bg_rect.size = instance.pos, instance.size
                 instance.border_line.rounded_rectangle = (instance.x, instance.y, instance.width, instance.height, 5)
-                instance.bg_color_instr.rgb = colors[0] if instance.state == 'normal' else colors[1]
+                instance.bg_color_instr.rgb = colors if instance.state == 'normal' else down_colors
         
         button.bind(pos=update_graphics, size=update_graphics, state=update_graphics)
 

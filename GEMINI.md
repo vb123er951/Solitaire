@@ -11,7 +11,7 @@ This project, **solitare**, is a fully functional Solitaire game built with Pyth
 ## Building and Running
 - **Install Dependencies:** `pip install -r requirements.txt`
 - **Run the Game:** `python main.py`
-- **Window Configuration:** Optimized for mobile-style aspect ratio (360x780).
+- **Window Configuration:** Optimized for landscape aspect ratio (780x360). Fully responsive for both portrait and landscape.
 
 ## Current Features
 - [x] **Core Solitaire Logic:** Standard Klondike rules implementation.
